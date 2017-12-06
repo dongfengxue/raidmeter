@@ -17,6 +17,7 @@ First write by raysmile, Second modify by maobo
 #include <stdio.h>
 #include <stdlib.h>  
 #include <time.h>
+#include <unistd.h>
 
 using namespace std;
 //#define DEBUG 
