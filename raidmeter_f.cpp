@@ -23,7 +23,7 @@ using namespace std;
 
 #ifdef DEBUG
 #define debug2(v1,v2) {cout<<v1<<"    "<<v2<<endl;}
-#define debugr3(v1,v2,v3) {cout<<v1<<"    "<<v2<<"    "<<v3<<endl;}
+#define debug3(v1,v2,v3) {cout<<v1<<"    "<<v2<<"    "<<v3<<endl;}
 #define debug4(v1,v2,v3,v4) {cout<<v1<<"    "<<v2<<"    "<<v3<<"    "<<v4<<endl;}
 #else
 #define debug2(v1,v2) ;
