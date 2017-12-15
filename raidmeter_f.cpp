@@ -23,7 +23,7 @@ using namespace std;
 
 #ifdef DEBUG
 #define debug2(v1,v2) {cout<<v1<<"    "<<v2<<endl;}
-#define debug3(v1,v2,v3) {cout<<v1<<"    "<<v2<<"    "<<v3<<endl;}
+#define debugr3(v1,v2,v3) {cout<<v1<<"    "<<v2<<"    "<<v3<<endl;}
 #define debug4(v1,v2,v3,v4) {cout<<v1<<"    "<<v2<<"    "<<v3<<"    "<<v4<<endl;}
 #else
 #define debug2(v1,v2) ;
@@ -42,8 +42,8 @@ const	long	READ		=	1;
 typedef	struct	_io_trace
 {
 	double			time;
-	unsigned long    	blkno;
-	int				blkcount;
+	unsigned long    	blkno;   //blk的序号
+	int				blkcount;   //长度占几个blk
 	unsigned int	flag;
 }io_trace;
 
@@ -290,8 +290,9 @@ int main(int argc,char **argv)
 
 	if(!dev_size)
 	{
-		dev_size=15*1024*1024;
-		printf("no raid capacity input, use default:[15GB]\n");
+		//dev_size=15*1024*1024;  //15G
+        dev_size=1*1024*1024;
+		printf("no raid capacity input, use default:[1GB]\n");
 	}
 
 	strcpy(dev_name,argv[argc]);
@@ -305,13 +306,13 @@ int main(int argc,char **argv)
 	exit_code=(char*)mmap(NULL,sizeof(char),PROT_READ|PROT_WRITE,MAP_SHARED|MAP_ANON,-1,(off_t)0);
 	if(exit_code==MAP_FAILED)
 	{
-		printf("Can't mmap shared memory!\n");
+		printf("Can't mmap shared memory!\n");  //页大小进行映射
 		exit(0);
 	}
 	*exit_code=10;
 
 	
-	trace_stat(trace_file_name, &max_trace_addr);
+	trace_stat(trace_file_name, &max_trace_addr); //读取trace文件内容，并赋值，得到trace地址，读/写操作等
 
 	//read trace file amd converte the trace adative to the raid capacity and intensity
 	//!!! rangescale needs to be re-implemented, it is not suitable now!
@@ -320,7 +321,7 @@ int main(int argc,char **argv)
        // cout<<"max"<<max_trace_addr;
        cout<<"rangescale:"<<rangescale;
 	total=trace_reader(trace_file_name, trace, MAX_TRACE_COUNT, timescale, rangescale);
-
+    /*读取trace并放入内存中*/
 	//cout<<total<<"	records"<<endl;
 	printf("\nbenchmark is initialized, press any character to begin the evaluation...");
 	getchar();
@@ -422,7 +423,7 @@ unsigned long trace_stat(char *file_name, unsigned long  *max_dev_addr)
 		//if(devno!=0)
 		//	continue;
 
-		timestamp=atof(time_str);
+		timestamp=atof(time_str); //字符串转成浮点数
 
 		total_count++;
 		count_threshold--;
@@ -448,11 +449,11 @@ unsigned long trace_stat(char *file_name, unsigned long  *max_dev_addr)
 
 	if ((end_timestamp-start_timestamp)>0)
 	{
-		io_per_sec=(float)total_count * 1.0 / (end_timestamp-start_timestamp);
+		io_per_sec=(float)total_count * 1.0 / (end_timestamp-start_timestamp);   //每秒的iops
 	}
 	if (total_count>0)
 	{
-		read_prop=(float)read_count * 1.0 / total_count;
+		read_prop=(float)read_count * 1.0 / total_count;   //读操作占的比例
 	}
 
 	*max_dev_addr=max_address;
@@ -473,7 +474,7 @@ int trace_reader(char *file_name, io_trace *trace, unsigned long max_trace_num, 
 	int i=0;
 
 	int					devno;
-	unsigned long		   address;
+	unsigned long		address;
 	int					length;
 	char				op_code;
 	char				time_str[20];
@@ -514,18 +515,18 @@ int trace_reader(char *file_name, io_trace *trace, unsigned long max_trace_num, 
 		trace[i].time=trace[i].time / timescale;
 
 		if(op_code=='R'||op_code=='r')
-			trace[i].flag=0;
+			trace[i].flag=0;         //读操作为0
 		else
-			trace[i].flag=1;
+			trace[i].flag=1;        //写操作为1
 
 		trace[i].blkno=address;
 		trace[i].blkno =(unsigned long)(trace[i].blkno * rangescale);
 		trace[i].blkno =(unsigned long)(trace[i].blkno*8)/8; //add by maobo
 //		trace[i].blkno =(unsigned long)(devno * rangescale + trace[i].blkno);
 	      //	cout<<"blkno:"<<trace[i].blkno<<",";
-                trace[i].blkcount=length /BLOCK_SIZE;
-                if(trace[i].blkcount>MAX_BLOCK)
-		trace[i].blkcount=MAX_BLOCK;
+        trace[i].blkcount=length /BLOCK_SIZE;
+        if(trace[i].blkcount>MAX_BLOCK)
+		    trace[i].blkcount=MAX_BLOCK;
 		i++;
 	}	
 	
@@ -607,7 +608,7 @@ void do_io()
 			my_aiocb[i].aio_nbytes = trace[i].blkcount*BLOCK_SIZE;
 			my_aiocb[i].aio_offset = trace[i].blkno*BLOCK_SIZE;
 
-			sigemptyset(&sig_act.sa_mask);//add by maobo
+			sigemptyset(&sig_act.sa_mask);      //add by maobo
   			sig_act.sa_flags = SA_SIGINFO;
  			sig_act.sa_sigaction = aio_complete_note;
 			my_aiocb[i].aio_sigevent.sigev_notify = SIGEV_SIGNAL;
